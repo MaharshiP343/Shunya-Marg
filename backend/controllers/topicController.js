@@ -1,6 +1,6 @@
 const Topic = require('../models/Topic');
 
-// @desc    Get all topics with optional search
+// @desc    Get all topics with optional search (INCLUDING Q&A)
 // @route   GET /api/topics?search=keyword
 // @access  Public
 exports.getAllTopics = async (req, res) => {
@@ -25,9 +25,10 @@ exports.getAllTopics = async (req, res) => {
       query.isActive = true;
     }
 
+    // CRITICAL FIX: Removed .select('-questionsAnswers')
+    // This now returns ALL fields including Q&A data
     const topics = await Topic.find(query)
-      .sort({ order: 1, createdAt: -1 })
-      .select('-questionsAnswers'); // Don't send Q&A in list view
+      .sort({ order: 1, createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -35,6 +36,7 @@ exports.getAllTopics = async (req, res) => {
       data: topics
     });
   } catch (error) {
+    console.error('Error in getAllTopics:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching topics',
@@ -43,16 +45,16 @@ exports.getAllTopics = async (req, res) => {
   }
 };
 
-// @desc    Get single topic by ID or slug
+// @desc    Get single topic by ID or slug (INCLUDING Q&A)
 // @route   GET /api/topics/:identifier
 // @access  Public
 exports.getTopic = async (req, res) => {
   try {
     const { identifier } = req.params;
-
+    
     // Try to find by ID first, then by slug
     let topic = await Topic.findById(identifier);
-
+    
     if (!topic) {
       topic = await Topic.findOne({ slug: identifier });
     }
@@ -69,6 +71,7 @@ exports.getTopic = async (req, res) => {
       data: topic
     });
   } catch (error) {
+    console.error('Error in getTopic:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching topic',
@@ -101,7 +104,8 @@ exports.createTopic = async (req, res) => {
         message: 'A topic with this title already exists'
       });
     }
-
+    
+    console.error('Error in createTopic:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating topic',
@@ -136,6 +140,7 @@ exports.updateTopic = async (req, res) => {
       data: updatedTopic
     });
   } catch (error) {
+    console.error('Error in updateTopic:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating topic',
@@ -166,6 +171,7 @@ exports.deleteTopic = async (req, res) => {
       data: {}
     });
   } catch (error) {
+    console.error('Error in deleteTopic:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting topic',
@@ -197,6 +203,7 @@ exports.addQuestionAnswer = async (req, res) => {
       data: topic
     });
   } catch (error) {
+    console.error('Error in addQuestionAnswer:', error);
     res.status(500).json({
       success: false,
       message: 'Error adding Q&A',
@@ -220,7 +227,7 @@ exports.updateQuestionAnswer = async (req, res) => {
     }
 
     const qa = topic.questionsAnswers.id(req.params.qaId);
-
+    
     if (!qa) {
       return res.status(404).json({
         success: false,
@@ -237,6 +244,7 @@ exports.updateQuestionAnswer = async (req, res) => {
       data: topic
     });
   } catch (error) {
+    console.error('Error in updateQuestionAnswer:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating Q&A',
@@ -268,6 +276,7 @@ exports.deleteQuestionAnswer = async (req, res) => {
       data: topic
     });
   } catch (error) {
+    console.error('Error in deleteQuestionAnswer:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting Q&A',
